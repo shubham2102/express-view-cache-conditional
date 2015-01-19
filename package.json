@@ -1,0 +1,63 @@
+{
+  "name": "express-view-cache",
+  "version": "0.1.1",
+  "description": "Unobtrusive solution to express framework - cache rendered page on server side in redis database, without unnecessary database requests and rendering.",
+  "main": "index.js",
+  "engines": {
+    "node": ">=0.10.32",
+    "npm": ">=1.4.3"
+  },
+  "os": [
+    "linux",
+    "darwin"
+  ],
+  "scripts": {
+    "start": "node example/expressAppWithCache.js",
+    "test": "./node_modules/.bin/mocha --reporter spec",
+    "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:vodolaz095/express-view-cache.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vodolaz095/express-view-cache/issues"
+  },
+  "author": {
+    "name": "Anatolij Ostroumov",
+    "email": "ostroumov095@gmail.com",
+    "url": "https://github.com/vodolaz095"
+  },
+  "dependencies": {
+    "async": "0.9.0",
+    "redis": "0.12.1",
+    "request": "2.48.0",
+    "hiredis": "*"
+  },
+  "optionalDependencies": {
+    "hiredis": "*"
+  },
+  "devDependencies": {
+    "express": "4.10.2",
+    "errorhandler": "1.2.2",
+    "morgan": "1.5.0",
+    "mocha": "2.0.1",
+    "should": "4.2.1"
+  },
+  "keywords": [
+    "express",
+    "view",
+    "cache",
+    "redis",
+    "caching"
+  ],
+  "license": "MIT",
+  "readmeFilename": "README.md",
+  "readme": "express-view-cache\n==================\n[![NPM version](https://badge.fury.io/js/express-view-cache.svg)](http://badge.fury.io/js/express-view-cache)\n[![Build Status](https://travis-ci.org/vodolaz095/express-view-cache.png)](https://travis-ci.org/vodolaz095/express-view-cache)\n[![Dependency Status](https://gemnasium.com/vodolaz095/express-view-cache.svg)](https://gemnasium.com/vodolaz095/express-view-cache)\n[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/vodolaz095/express-view-cache/trend.png)](https://bitdeli.com/free \"Bitdeli Badge\")\n\nUnobtrusive solution to express 4.0.0 framework - cache response content in Redis database.\n\nAttention!\n==================\nVersion `0.0.6` is abandoned. Sorry. But it is still present, you can use it, if you are brave.\nBut i have encountered few problems with this version i was unable to solve, and i decided to rewrite it from scratch,\nwith near the same API and better functionality.\n\nShameless advertisement\n==================\nYou can hire the author of this package by Odesk - [https://www.odesk.com/users/~0120ba573d09c66c51](https://www.odesk.com/users/~0120ba573d09c66c51s)\n\n\nWhy do we need this plugin and how does it work?\n==================\n\nLet's consider we have a NodeJS application with code like this:\n\n    app.get('/getPopularPosts',function(req,res){\n        req.model.posts.getPopular(function(err,posts){\n            if(err) throw err;\n            res.render('posts',{\"posts\":posts});\n        });\n    });\n\nThe method `getPopular` of `posts` requires a call to database and executed slowly. Also rendering the template of posts\nrequires some time. So, maybe we need to cache all this? Ideally, when visitor gets the page with url  `/getPopularPosts`\nwe have to give him info right from cache, without requests to database, parsing data received, rendering page and other things\nwe need to do to give him this page. The most expressJS way to do it is to make a separate middleware, that is ran before\nrouter middleware, and returns page from cache (if it is present in cache) or pass data to other middlewares, but this caching\nmiddleware adds a listener to response, which SAVES rendered response to cache. And for future use, the response is taken from CACHE!\n\nIt is turned that it works best with [node-redis](https://github.com/mranney/node_redis) with [redis](http://redis.io) >v2.6.16\n\n\n\nExample\n==================\nThere is a complete example of NodeJS + ExpressJS (4.x.x) application which responds with current time.\n\n```javascript\n\n    var express = require('express'),\n      morgan = require('morgan'),\n      errorHandler = require('errorhandler'),\n      request = require('request'),\n      http = require('http'),\n      EVC = require('express-view-cache'),\n      app = express(),\n      evc = EVC('redis://redis:someLongAuthPassword@localhost:6379');\n\n    app.set('port', process.env.PORT || 3000);\n    app.use(morgan('dev'));\n    app.use('/cacheFor5sec', evc.cachingMiddleware(5000));\n    app.use('/cacheFor3sec', evc.cachingMiddleware(3000));\n    app.get('*', function (request, response) {\n      response.json({\n        'Page Created At': new Date().toLocaleTimeString()\n      });\n    });\n    app.use(errorHandler());\n\n    http.createServer(app).listen(app.get('port'), function () {\n      console.log(\"Express server listening on port \" + app.get('port'));\n\n      setInterval(function(){\n        request('http://localhost:'+app.get('port')+'/', function(error, response, body){\n          console.log('GET /',body);\n        })\n      }, 1000);\n\n      setInterval(function(){\n        request('http://localhost:'+app.get('port')+'/cacheFor3sec', function(error, response, body){\n          console.log('GET /cacheFor3sec',body);\n        })\n      }, 1000);\n    });\n\n```\n\n\nOptions\n==================\n\n    var evc = EVC(options);\n    app.use('/someURItoBeCachedForFiveSeconds', evc.cachingMiddleware(5000));\n\n`Options` can be a redis connection string like `redis://usernameTotallyIgnored:someLongPassword@redis.example.org:6379`\n\nalso `options` can be an dictionary object with this fields:\n\n* `host` - default is `localhost` - the hostname of redis server\n* `port` - default is `6379` - the port where the redis server listens\n* `pass` - [password for redis authorization](https://github.com/mranney/node_redis#clientauthpassword-callback), default is null\n* `client` - ready to use [node-redis](https://github.com/mranney/node_redis) client - this option overrides all previous\n* `appPort` - port of nodejs application to use, default is `process.env.PORT` or `3000`\n\nTests\n==================\n\n    $ npm test\n\nLicense\n====================\nThe MIT License (MIT)\n\nCopyright (c) 2013 Ostroumov Anatolij ostroumov095(at)gmail(dot)com et al.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n\n",
+  "_id": "express-view-cache@0.1.1",
+  "dist": {
+    "shasum": "67f0d814c100d81d1d44d2dcf155c08c58f9562e"
+  },
+  "_from": "express-view-cache@^0.1.1",
+  "_resolved": "https://registry.npmjs.org/express-view-cache/-/express-view-cache-0.1.1.tgz"
+}
