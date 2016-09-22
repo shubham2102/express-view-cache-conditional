@@ -3,20 +3,8 @@ express-view-cache
 [![NPM version](https://badge.fury.io/js/express-view-cache.svg)](http://badge.fury.io/js/express-view-cache)
 [![Build Status](https://travis-ci.org/vodolaz095/express-view-cache.png)](https://travis-ci.org/vodolaz095/express-view-cache)
 [![Dependency Status](https://gemnasium.com/vodolaz095/express-view-cache.svg)](https://gemnasium.com/vodolaz095/express-view-cache)
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/vodolaz095/express-view-cache/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
 Unobtrusive solution to express 4.0.0 framework - cache response content in Redis database.
-
-Attention!
-==================
-Version `0.0.6` is abandoned. Sorry. But it is still present, you can use it, if you are brave.
-But i have encountered few problems with this version i was unable to solve, and i decided to rewrite it from scratch,
-with near the same API and better functionality.
-
-Shameless advertisement
-==================
-You can hire the author of this package by Odesk - [https://www.odesk.com/users/~0120ba573d09c66c51](https://www.odesk.com/users/~0120ba573d09c66c51s)
-
 
 Why do we need this plugin and how does it work?
 ==================
