@@ -99,7 +99,7 @@ License
 ====================
 The MIT License (MIT)
 
-Copyright (c) 2013 Ostroumov Anatolij ostroumov095(at)gmail(dot)com et al.
+Copyright (c) 2014 Shubham Singh shubham2102@gmail.com et al.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
